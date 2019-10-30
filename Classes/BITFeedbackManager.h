@@ -336,6 +336,8 @@ typedef NS_ENUM(NSInteger, BITFeedbackObservationMode) {
 - (void)showFeedbackComposeViewWithGeneratedScreenshot;
 
 
+- (void)setServerURL:(NSString *)serverURL;
+
 /**
  Create a feedback compose view
 

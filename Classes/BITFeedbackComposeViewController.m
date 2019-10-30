@@ -244,6 +244,7 @@ static const CGFloat kSscrollViewWidth = 100;
   self.textView = [[UITextView alloc] initWithFrame:CGRectZero];
   self.textView.font = [UIFont systemFontOfSize:17];
   self.textView.delegate = self;
+  self.textView.textColor = [UIColor blackColor];
   self.textView.backgroundColor = [UIColor whiteColor];
   self.textView.returnKeyType = UIReturnKeyDefault;
   self.textView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;

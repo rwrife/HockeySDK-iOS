@@ -137,6 +137,12 @@ typedef void (^BITLatestImageFetchCompletionBlock)(UIImage *_Nonnull latestImage
   }
 }
 
+- (void)setServerURL:(NSString *)serverURL {
+  if ([serverURL isEqualToString:super.serverURL]) { return; }
+  
+  super.serverURL = serverURL;
+}
+
 #pragma mark - Observers
 
 - (void)registerObservers {
@@ -233,7 +239,7 @@ typedef void (^BITLatestImageFetchCompletionBlock)(UIImage *_Nonnull latestImage
   }
 
   [composeViewController prepareWithItems:preparedItems];
-  [composeViewController setHideImageAttachmentButton:self.feedbackComposeHideImageAttachmentButton];
+  [composeViewController setHideImageAttachmentButton:YES];
 
   // by default set the delegate to be identical to the one of BITFeedbackManager
   [composeViewController setDelegate:strongDelegate];
@@ -874,34 +880,21 @@ typedef void (^BITLatestImageFetchCompletionBlock)(UIImage *_Nonnull latestImage
 
 - (void)sendNetworkRequestWithHTTPMethod:(NSString *)httpMethod withMessage:(BITFeedbackMessage *)message completionHandler:(void (^)(NSError *error))completionHandler {
   NSString *boundary = @"----FOO";
+  
+  NSLog(@"SendNetworkRequest %@ %@", message.name, message.text);
 
   self.networkRequestInProgress = YES;
   // inform the UI to update its data in case the list is already showing
   [[NSNotificationCenter defaultCenter] postNotificationName:BITHockeyFeedbackMessagesLoadingStarted object:nil];
 
-  NSString *tokenParameter = @"";
-  if ([self token]) {
-    tokenParameter = [NSString stringWithFormat:@"/%@", [self token]];
+  //override feedback manager url and other settings
+  id<BITFeedbackManagerDelegate> strongDelegate = self.delegate;
+  if (strongDelegate && [strongDelegate respondsToSelector:@selector(overrideFeedbackManagerSettings:)]) {
+    [strongDelegate overrideFeedbackManagerSettings:self];
   }
-  NSMutableString *parameter = [NSMutableString stringWithFormat:@"api/2/apps/%@/feedback%@", [self encodedAppIdentifier], tokenParameter];
-
-  NSString *lastMessageID = @"";
-  if (!self.lastMessageID) {
-    [self updateLastMessageID];
-  }
-  if (self.lastMessageID) {
-    lastMessageID = [NSString stringWithFormat:@"&last_message_id=%li", (long) [self.lastMessageID integerValue]];
-  }
-
-  [parameter appendFormat:@"?format=json&bundle_version=%@&sdk=%@&sdk_version=%@%@",
-                          bit_URLEncodedString([[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"]),
-                  BITHOCKEY_NAME,
-                  BITHOCKEY_VERSION,
-                          lastMessageID
-  ];
-
+ 
   // build request & send
-  NSString *url = [NSString stringWithFormat:@"%@%@", self.serverURL, parameter];
+  NSString *url = [NSString stringWithFormat:@"%@%@", self.serverURL, [self encodedAppIdentifier]];
   BITHockeyLogDebug(@"INFO: sending api request to %@", url);
 
   NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:(NSURL *)[NSURL URLWithString:url] cachePolicy:1 timeoutInterval:10.0];
